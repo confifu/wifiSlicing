@@ -10,7 +10,6 @@ __version__ = "0.1.0"
 __email__ = "gawlowicz@tkn.tu-berlin.de"
 
 
-print("Hello I am here")
 parser = argparse.ArgumentParser(description='Start simulation script on/off')
 parser.add_argument('--start',
                     type=int,
@@ -61,10 +60,10 @@ try:
             print("Step: ", stepIdx)
             obs, reward, done, info = env.step(action)
             #print("---obs, reward, done, info: ", obs["SliceA"], reward, done, info)
-            print(obs["SliceA"][0])
-            print(obs["SliceA"][1])
-            print(obs["SliceA"][2])
-            print(obs["SliceA"][3])
+            print("dataRate", obs["SliceA"][0])
+            print("txPackets", obs["SliceA"][1])
+            print("rxPackets", obs["SliceA"][2])
+            print("latency", obs["SliceA"][3])
 
             if done:
                 stepIdx = 0
