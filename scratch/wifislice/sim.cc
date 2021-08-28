@@ -641,6 +641,55 @@ void set_mcs()
                StringValue (ossC.str ()));
 }
 
+/*
+Execute received actions
+*/
+bool MyExecuteActions(Ptr<OpenGymDataContainer> action)
+{
+  
+  Ptr<OpenGymDictContainer> dict = DynamicCast<OpenGymDictContainer>(action);
+  Ptr<OpenGymBoxContainer<int> > chNum = DynamicCast<OpenGymBoxContainer<int> >(dict->Get("chNum"));
+  Ptr<OpenGymBoxContainer<int> > gi = DynamicCast<OpenGymBoxContainer<int> >(dict->Get("gi"));
+  Ptr<OpenGymBoxContainer<int> > mcs = DynamicCast<OpenGymBoxContainer<int> >(dict->Get("mcs"));
+  Ptr<OpenGymBoxContainer<int> > txPower = DynamicCast<OpenGymBoxContainer<int> >(dict->Get("txPower"));
+
+  std::vector<int> chNumVector = chNum->GetData();
+  std::vector<int> giVector = gi->GetData();
+  std::vector<int> mcsVector = mcs->GetData();
+  std::vector<int> txPowerVector = txPower->GetData();  
+
+  channelNumberA = channelList[chNumVector.at(0)];
+  channelNumberB = channelList[chNumVector.at(1)];
+  channelNumberC = channelList[chNumVector.at(2)];
+
+  if (channelNumberA < 30) channelWidthA = 20;
+  else if (channelNumberA < 44) channelWidthA = 40;
+  else if (channelNumberA < 44) channelWidthA = 60;
+
+  if (channelNumberB < 30) channelWidthB = 20;
+  else if (channelNumberB < 44) channelWidthB = 40;
+  else if (channelNumberB < 44) channelWidthB = 60;
+
+  if (channelNumberC < 30) channelWidthC = 20;
+  else if (channelNumberC < 44) channelWidthC = 40;
+  else if (channelNumberC < 44) channelWidthC = 60;
+
+  giA = 800 * int(pow(2, giVector.at(0)));
+  giB = 800 * int(pow(2, giVector.at(1)));
+  giC = 800 * int(pow(2, giVector.at(2)));
+
+  mcsA = mcsVector.at(0);
+  mcsB = mcsVector.at(1);
+  mcsC = mcsVector.at(2);
+
+  txPowerA = txPowerVector.at(0);
+  txPowerB = txPowerVector.at(1);
+  txPowerC = txPowerVector.at(2);
+  
+  std::cout << "Updated channel values"<<std::endl;
+  //NS_LOG_UNCOND ("MyExecuteActions: " << action);
+  return true;
+}
 
 // function to create a new C/S application
 void new_application (uint16_t& index, NodeContainer staNodes, NodeContainer apNode, std::string dataRate_str,
