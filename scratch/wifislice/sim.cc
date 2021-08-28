@@ -63,6 +63,7 @@
 #include "ns3/netanim-module.h"
 #include "ns3/buildings-module.h"
 #include "ns3/ipv4-flow-classifier.h"
+#include "ns3/spectrum-wifi-phy.h"
 #include <bits/stdc++.h>
 #include <unistd.h>
 
@@ -79,7 +80,34 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("wifi_dynamic");
 
 
-// Options
+//Options
+//[0, 29] 20 MHz width
+//[30, 43]
+//[44, 53]
+int channelList[53] = {36,  40,  44,  48,  52,  56,  60,  64, 100, 104,
+                      108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
+                      149, 153, 157, 161, 165, 169, 173, 177, 181,  38,
+                       46,  54,  62, 102, 110, 118, 126, 134, 142, 151,
+                      159, 167, 175,  42,  58, 106, 122, 138, 155, 171,
+                       50, 114, 163};
+
+
+double tab1[12][8] = {
+  {7.10, 7.49, 14.4, 15.2, 30.1, 31.8, 60.2, 63.9},
+  {14.5, 15.3, 29.0, 30.7, 60.6, 64.3, 119, 125},
+  {21.7, 23.0, 43.4, 45.9, 90.8, 95.8, 170, 179},
+  {29.0, 30.8, 58.1, 61.6, 119, 125, 220, 231},
+  {43.6, 46.1, 87.1, 92.0, 171, 180, 307, 321},
+  {58.1, 61.6, 114, 120, 220, 231, 382, 399},
+  {65.4, 69.3, 127, 134, 243, 255, 419, 437},
+  {72.6, 76.9, 140, 147, 266, 279, 453, 471},
+  {87.1, 92.0, 165, 173, 307, 321, 506, 526},
+  {96.2, 101, 180, 190, 333, 349, 547, 567},
+  {107, 113, 201, 211, 366, 382, 584, 605},
+  {118, 125, 218, 229, 395, 412, 627, 648}
+};
+
+int tab2[12] = {-69, -66, -63, -59, -56, -52, -50, -48, -44, -43, -39, -37};
 
 uint32_t payloadSize = 1472;          // bytes (UDP)
 //double simulationTime = 15;           // seconds
@@ -233,9 +261,32 @@ Define action space
 */
 Ptr<OpenGymSpace> MyGetActionSpace(void)
 {
-  uint32_t nodeNum = 5;
+  /*
+  * OUTPUTS:    - channelWidthA, channelNumberA, giA, mcsA, txPowerA
+  *             - channelWidthB, channelNumberB, giB, mcsB, txPowerB
+  *             - channelWidthC, channelNumberC, giC, mcsC, txPowerC
+  */
+  std::vector<uint32_t> shape = {3,};
+  std::string intDtype = TypeNameGet<int> ();
+  
+  //channel width  : depends on channel number
+  //channel number : [0, 52] from the list
+  Ptr<OpenGymBoxSpace> chNum = CreateObject<OpenGymBoxSpace> (0, 52, shape, intDtype);
+  
+  //gi             : 800, 1600, 3200, [800 * (2^gi)]
+  Ptr<OpenGymBoxSpace> gi = CreateObject<OpenGymBoxSpace> (0, 2, shape, intDtype);
 
-  Ptr<OpenGymDiscreteSpace> space = CreateObject<OpenGymDiscreteSpace> (nodeNum);
+  //mcs            : [0, 11]
+  Ptr<OpenGymBoxSpace> mcs = CreateObject<OpenGymBoxSpace> (0, 11, shape, intDtype);
+
+  //txPower        : [1, 20]
+  Ptr<OpenGymBoxSpace> txPower = CreateObject<OpenGymBoxSpace> (1, 20, shape, intDtype);
+
+  Ptr<OpenGymDictSpace> space = CreateObject<OpenGymDictSpace> ();
+  space->Add("chNum", chNum);
+  space->Add("gi", gi);
+  space->Add("mcs", mcs);
+  space->Add("txPower", txPower);
   NS_LOG_UNCOND ("MyGetActionSpace: " << space);
   return space;
 }
@@ -293,7 +344,6 @@ Ptr<OpenGymDataContainer> MyGetObservation(void)
   allNodeStatsA->Add(txPacketsA);
   allNodeStatsA->Add(rxPacketsA);  
   allNodeStatsA->Add(latencyA);
-
 
 
   //Slice B
@@ -392,17 +442,6 @@ std::string MyGetExtraInfo(void)
 }
 
 
-/*
-Execute received actions
-*/
-bool MyExecuteActions(Ptr<OpenGymDataContainer> action)
-{
-  Ptr<OpenGymDiscreteContainer> discrete = DynamicCast<OpenGymDiscreteContainer>(action);
-  std::cout << "ExecuteAction"<<std::endl;
-  NS_LOG_UNCOND ("MyExecuteActions: " << action);
-  return true;
-}
-
 void ScheduleNextStateRead(double envStepTime, Ptr<OpenGymInterface> openGym)
 {
   Simulator::Schedule (Seconds(envStepTime), &ScheduleNextStateRead, envStepTime, openGym);
@@ -412,8 +451,8 @@ void ScheduleNextStateRead(double envStepTime, Ptr<OpenGymInterface> openGym)
 //======================================================================
 
 uint32_t simSeed = 1;
-double simulationTime = 1; //seconds
-double envStepTime = 0.1; //seconds, ns3gym env step time interval
+double simulationTime = 20.0; //seconds
+double envStepTime = 1.0; //seconds, ns3gym env step time interval
 uint32_t openGymPort = 5555;
 uint32_t testArg = 0;
 
@@ -484,23 +523,36 @@ void configure (int argc, char *argv[])
 
 
 // function to set the channel number
-void set_channel_number()
+void set_channel_number(NodeContainer staNodes, NodeContainer apNode)
 {
-  for (int i = 0; i < nStaA; i++)
-    Config::Set ("/NodeList/" + std::to_string(i) + "/DeviceList/0/$ns3::WifiNetDevice/Phy/ChannelNumber",
-                 UintegerValue (channelNumberA));
-  Config::Set ("/NodeList/" + std::to_string(nStaA+nStaB+nStaC) + "/DeviceList/0/$ns3::WifiNetDevice/Phy/ChannelNumber",
-               UintegerValue (channelNumberA)); ///NodeList/3/DeviceList 3?
-  for (int i = 0; i < nStaB; i++)
-    Config::Set ("/NodeList/" + std::to_string(nStaA+i) + "/DeviceList/0/$ns3::WifiNetDevice/Phy/ChannelNumber",
-                 UintegerValue (channelNumberB));
-  Config::Set ("/NodeList/" + std::to_string(nStaA+nStaB+nStaC) + "/DeviceList/1/$ns3::WifiNetDevice/Phy/ChannelNumber",
-               UintegerValue (channelNumberB));
-  for (int i = 0; i < nStaC; i++)
-    Config::Set ("/NodeList/" + std::to_string(nStaA+nStaB+i) + "/DeviceList/0/$ns3::WifiNetDevice/Phy/ChannelNumber",
-                 UintegerValue (channelNumberC));
-  Config::Set ("/NodeList/" + std::to_string(nStaA+nStaB+nStaC) + "/DeviceList/2/$ns3::WifiNetDevice/Phy/ChannelNumber",
-               UintegerValue (channelNumberC));
+  for (uint32_t i = 0; i < staNodes.GetN (); i++)
+  {
+    
+    Ptr<WifiNetDevice> wifidevice = DynamicCast<WifiNetDevice> (staNodes.Get(i)->GetDevice(0));
+    Ptr<SpectrumWifiPhy> phy0 = DynamicCast<SpectrumWifiPhy>(wifidevice->GetPhy());
+    if (i < nStaA) {
+      phy0->SetChannelNumber (channelNumberA);
+    }
+    else if (i < nStaB) {
+      phy0->SetChannelNumber (channelNumberB);
+    }
+    else {
+      phy0->SetChannelNumber (channelNumberC);
+    }
+  }
+  //std::cout << "Changed Frequency to: " << channelNumberA <<" " << channelNumberB  << " " << channelNumberC << std::endl;
+
+  Ptr<WifiNetDevice> apdevice0 = DynamicCast<WifiNetDevice> (apNode.Get(0)->GetDevice(0));
+  Ptr<SpectrumWifiPhy> phy0 = DynamicCast<SpectrumWifiPhy>(apdevice0->GetPhy());
+  phy0->SetChannelNumber (channelNumberA);
+  
+  Ptr<WifiNetDevice> apdevice1 = DynamicCast<WifiNetDevice> (apNode.Get(0)->GetDevice(1));
+  Ptr<SpectrumWifiPhy> phy1 = DynamicCast<SpectrumWifiPhy>(apdevice1->GetPhy());
+  phy1->SetChannelNumber (channelNumberB);
+  
+  Ptr<WifiNetDevice> apdevice2 = DynamicCast<WifiNetDevice> (apNode.Get(0)->GetDevice(2));
+  Ptr<SpectrumWifiPhy> phy2 = DynamicCast<SpectrumWifiPhy>(apdevice2->GetPhy());
+  phy2->SetChannelNumber (channelNumberC);
 }
 
 
@@ -776,7 +828,7 @@ void update_channels (int i, Ptr<HybridBuildingsPropagationLossModel> lossModel,
   {
   	// probErr[0][i] = (txPackets[0][i] - rxPackets[0][i]) / (double)txPackets[0][i];
     probErr[0][i] = ((txPackets[0][i]-txPackets[1][i]) - (rxPackets[0][i]-rxPackets[1][i])) / (double)(txPackets[0][i]-txPackets[1][i]);
-    std::cout << "Error Prob: " << probErr[0][i] << std::endl;
+    //std::cout << "Error Prob: " << probErr[0][i] << std::endl;
   }
 
   // Compute Outputs: channel width, channel number, guard interval, mcs, tx power
@@ -798,12 +850,14 @@ void update_channels (int i, Ptr<HybridBuildingsPropagationLossModel> lossModel,
   */
   
   // Set Outputs
-  set_channel_number();
-  set_channel_width();
+  set_channel_number(staNodes, apNode);
+  //set_channel_width();
   set_tx_power();
   set_guard_interval();
   set_mcs();
 
+  //uncomment to write output to file
+  /*
   // Write file
   std::ofstream out ((outDir + csvFileName).c_str (), std::ios::app);
   
@@ -838,6 +892,7 @@ void update_channels (int i, Ptr<HybridBuildingsPropagationLossModel> lossModel,
     << txPackets[0][nStaA+nStaB+i] << "," << rxPackets[0][nStaA+nStaB+i] << "," << latency[0][nStaA+nStaB+i] << std::endl;
   }
   out.close ();
+  */
 }
 
 
@@ -886,7 +941,7 @@ void compute_channels (Ptr<HybridBuildingsPropagationLossModel> lossModel,
   */
 
   // Set Outputs
-  set_channel_number();
+  set_channel_number(staNodes, apNode);
   set_channel_width();
   set_tx_power();
   set_guard_interval();

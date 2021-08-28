@@ -17,7 +17,7 @@ parser.add_argument('--start',
                     help='Start ns-3 simulation script 0/1, Default: 1')
 parser.add_argument('--iterations',
                     type=int,
-                    default=1,
+                    default=10,
                     help='Number of iterations, Default: 1')
 args = parser.parse_args()
 startSim = bool(args.start)
@@ -25,14 +25,12 @@ iterationNum = int(args.iterations)
 
 port = 5555
 simTime = 20 # seconds
-stepTime = 0.5  # seconds
+stepTime = 1.0  # seconds
 seed = 0
 simArgs = {"--simTime": simTime,
            "--testArg": 123}
-debug = False
-print("about to generate env")
+debug = True
 env = ns3env.Ns3Env(port=port, stepTime=stepTime, startSim=startSim, simSeed=seed, simArgs=simArgs, debug=debug)
-print("generated env")
 # simpler:
 #env = ns3env.Ns3Env()
 env.reset()
@@ -50,26 +48,28 @@ try:
         print("Start iteration: ", currIt)
         obs = env.reset()
         print("Step: ", stepIdx)
-        print("---obs:", obs)
+        #print("---obs:", obs)
 
         while True:
             stepIdx += 1
             action = env.action_space.sample()
-            print("---action: ", action)
-
-            print("Step: ", stepIdx)
+            #print("---action: ", action["chNum"])    
+        
             obs, reward, done, info = env.step(action)
+            
             #print("---obs, reward, done, info: ", obs["SliceA"], reward, done, info)
-            print("dataRate", obs["SliceA"][0])
-            print("txPackets", obs["SliceA"][1])
-            print("rxPackets", obs["SliceA"][2])
-            print("latency", obs["SliceA"][3])
+            
+            #print("dataRate", obs["SliceA"][0])
+            #print("txPackets", obs["SliceA"][1])
+            #print("rxPackets", obs["SliceA"][2])
+            #print("latency", obs["SliceA"][3])
 
             if done:
                 stepIdx = 0
                 if currIt + 1 < iterationNum:
                     env.reset()
                 break
+        
 
         currIt += 1
         if currIt == iterationNum:
