@@ -304,7 +304,7 @@ bool MyGetGameOver(void)
   if (stepCounter == 10 && test) {
       isGameOver = true;
   }
-  NS_LOG_UNCOND ("MyGetGameOver: " << isGameOver);
+  //NS_LOG_UNCOND ("MyGetGameOver: " << isGameOver);
   return isGameOver;
 }
 
@@ -415,8 +415,9 @@ Ptr<OpenGymDataContainer> MyGetObservation(void)
   space->Add("SliceA", allNodeStatsA);
   space->Add("SliceB", allNodeStatsB);
   space->Add("SliceC", allNodeStatsC);
-  
-  NS_LOG_UNCOND ("MyGetObservation: " << space);
+
+  std::cout << "Reading observations from ns3"<< std::endl;
+  //NS_LOG_UNCOND ("MyGetObservation: " << space);
   return space;
 }
 
@@ -437,7 +438,7 @@ std::string MyGetExtraInfo(void)
 {
   std::string myInfo = "testInfo";
   myInfo += "|123";
-  NS_LOG_UNCOND("MyGetExtraInfo: " << myInfo);
+  //NS_LOG_UNCOND("MyGetExtraInfo: " << myInfo);
   return myInfo;
 }
 
@@ -738,7 +739,7 @@ bool MyExecuteActions(Ptr<OpenGymDataContainer> action)
   txPowerB = txPowerVector.at(1);
   txPowerC = txPowerVector.at(2);
   
-  std::cout << "Updated channel values"<<std::endl;
+  std::cout << "Changed Action Values"<<std::endl;
   //NS_LOG_UNCOND ("MyExecuteActions: " << action);
   return true;
 }

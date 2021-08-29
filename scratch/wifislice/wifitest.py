@@ -47,16 +47,23 @@ try:
     while True:
         print("Start iteration: ", currIt)
         obs = env.reset()
-        print("Step: ", stepIdx)
+        #print("Step: ", stepIdx)
         #print("---obs:", obs)
 
         while True:
             stepIdx += 1
+            print("Step: ", stepIdx)
             action = env.action_space.sample()
             #print("---action: ", action["chNum"])    
-        
-            obs, reward, done, info = env.step(action)
-            
+
+            try:
+                print("About to change action values, Python")
+                obs, reward, done, info = env.step(action)
+                print("Changed action values and read obs, Python")
+            except:
+                print("got an error")
+                reward = -100.0
+                done = True
             #print("---obs, reward, done, info: ", obs["SliceA"], reward, done, info)
             
             #print("dataRate", obs["SliceA"][0])
