@@ -717,15 +717,15 @@ bool MyExecuteActions(Ptr<OpenGymDataContainer> action)
 
   if (channelNumberA < 30) channelWidthA = 20;
   else if (channelNumberA < 44) channelWidthA = 40;
-  else if (channelNumberA < 44) channelWidthA = 60;
+  else channelWidthA = 60;
 
   if (channelNumberB < 30) channelWidthB = 20;
   else if (channelNumberB < 44) channelWidthB = 40;
-  else if (channelNumberB < 44) channelWidthB = 60;
+  else channelWidthB = 60;
 
   if (channelNumberC < 30) channelWidthC = 20;
   else if (channelNumberC < 44) channelWidthC = 40;
-  else if (channelNumberC < 44) channelWidthC = 60;
+  else channelWidthC = 60;
 
   giA = 800 * int(pow(2, giVector.at(0)));
   giB = 800 * int(pow(2, giVector.at(1)));
