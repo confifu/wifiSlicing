@@ -103,9 +103,9 @@ bool enablePcap = 0;                  // 0 no Pcap or 1 Pcap
 double x_max = 20.0;                  // meters
 double y_max = 10.0;                  // meters
 double z_max = 3.0;                   // meters
-const int nStaA = 6;                  // number of stations A
+const int nStaA = 4;                  // number of stations A
 const int nStaB = 100;                // number of stations B
-const int nStaC = 2;                  // number of stations C
+const int nStaC = 4;                  // number of stations C
 // Network A
 int channelNumberA = 42;  // Channel number A
 int channelWidthA = 20;   // 20, 40, 80 or 160 MHz

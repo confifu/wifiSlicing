@@ -12,7 +12,7 @@ import csv
 # Options
 num_scenarios = 1           # how many scenarios are simulated
 num_seeds = 20              # how many times each scenario is simulated
-notes = "6-100-2"           # notes to be written in the .csv file
+notes = "4-100-4"           # notes to be written in the .csv file
 ns3_script = "wifi_1ch"     # ns3 script to be launched
 
 timestamp = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
@@ -43,9 +43,9 @@ def main():
             #args["dataRateA"] = "xMb/s" to be set in the ns3 script
             #args["dataRateB"] = "xKb/s" to be set in the ns3 script
             #args["dataRateC"] = "xMb/s" to be set in the ns3 script
-            args["nStaA"] = 6
+            args["nStaA"] = 4
             args["nStaB"] = 100
-            args["nStaC"] = 2
+            args["nStaC"] = 4
             arg_list.append(args)
     with open(csv_file_py, 'w') as file:
         writer = csv.writer(file)
