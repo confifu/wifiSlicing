@@ -54,6 +54,7 @@ def main():
         writer.writerow(["notes", ns3_script + ". " + notes])
         writer.writerow(["arg_list[0]", arg_list[0]])
         writer.writerow(["arg_list[" + str(len(arg_list)-1) + "]", arg_list[len(arg_list)-1]])
+    subprocess.call('(cd ..; ./waf configure; ./waf build)', shell=True)
     for i in range(0, len(arg_list)):
         simulate(arg_list[i])
         print
@@ -108,7 +109,7 @@ def get_arguments(arg):
 def simulate(arg):
     arguments = get_arguments(arg)
     print "Calling the ns3 script '" + ns3_script + ".cc'"
-    subprocess.call('(cd ..; ./waf --run "' + ns3_script + arguments+ '" --vis)', shell=True)
+    subprocess.call('(cd ..; ./waf --run "' + ns3_script + arguments+ '")', shell=True)
 
 
 if __name__ == "__main__":

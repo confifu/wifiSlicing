@@ -64,6 +64,7 @@ def main():
         writer.writerow(["notes", ns3_script + ". " + notes])
         writer.writerow(["arg_list[0]", arg_list[0]])
         writer.writerow(["arg_list[" + str(len(arg_list)-1) + "]", arg_list[len(arg_list)-1]])
+    subprocess.call('(cd ..; ./waf configure; ./waf build)', shell=True)
     for i in range(0, len(arg_list)):
         simulate(arg_list[i])
         print
