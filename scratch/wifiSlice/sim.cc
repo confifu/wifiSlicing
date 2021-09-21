@@ -91,24 +91,6 @@ int channelList[53] = {36,  40,  44,  48,  52,  56,  60,  64, 100, 104,
                       159, 167, 175,  42,  58, 106, 122, 138, 155, 171,
                        50, 114, 163};
 
-
-double tab1[12][8] = {
-  {7.10, 7.49, 14.4, 15.2, 30.1, 31.8, 60.2, 63.9},
-  {14.5, 15.3, 29.0, 30.7, 60.6, 64.3, 119, 125},
-  {21.7, 23.0, 43.4, 45.9, 90.8, 95.8, 170, 179},
-  {29.0, 30.8, 58.1, 61.6, 119, 125, 220, 231},
-  {43.6, 46.1, 87.1, 92.0, 171, 180, 307, 321},
-  {58.1, 61.6, 114, 120, 220, 231, 382, 399},
-  {65.4, 69.3, 127, 134, 243, 255, 419, 437},
-  {72.6, 76.9, 140, 147, 266, 279, 453, 471},
-  {87.1, 92.0, 165, 173, 307, 321, 506, 526},
-  {96.2, 101, 180, 190, 333, 349, 547, 567},
-  {107, 113, 201, 211, 366, 382, 584, 605},
-  {118, 125, 218, 229, 395, 412, 627, 648}
-};
-
-int tab2[12] = {-69, -66, -63, -59, -56, -52, -50, -48, -44, -43, -39, -37};
-
 uint32_t payloadSize = 1472;          // bytes (UDP)
 //double simulationTime = 15;           // seconds
 int seed = 1;                         // seed used in the simulation
@@ -524,7 +506,7 @@ void configure (int argc, char *argv[])
 
 
 // function to set the channel number
-void set_channel_number(NodeContainer staNodes, NodeContainer apNode)
+void set_channel_number()
 {
   for (int i = 0; i < nStaA; i++)
     Config::Set ("/NodeList/" + std::to_string(i) + "/DeviceList/0/$ns3::WifiNetDevice/Phy/ChannelNumber",
@@ -698,24 +680,33 @@ bool MyExecuteActions(Ptr<OpenGymDataContainer> action)
   std::vector<int> giVector = gi->GetData();
   std::vector<int> mcsVector = mcs->GetData();
   std::vector<int> txPowerVector = txPower->GetData();  
-  /*
-  channelNumberA = channelList[chNumVector.at(0)];
-  channelNumberB = channelList[chNumVector.at(1)];
-  channelNumberC = channelList[chNumVector.at(2)];
+  
+  int chA = chNumVector.at(0);
+  int chB = chNumVector.at(1);
+  int chC = chNumVector.at(2);
+  
+  
+  channelNumberA = channelList[chA];
+  channelNumberB = channelList[chB];
+  channelNumberC = channelList[chC];
 
   
-  if (channelNumberA < 30) channelWidthA = 20;
-  else if (channelNumberA < 44) channelWidthA = 40;
-  else channelWidthA = 60;
+  if (chA < 29) channelWidthA = 20;
+  else if (chA < 43) channelWidthA = 40;
+  else if (chA < 50) channelWidthA = 80;
+  else channelWidthA = 160; 
 
-  if (channelNumberB < 30) channelWidthB = 20;
-  else if (channelNumberB < 44) channelWidthB = 40;
-  else channelWidthB = 60;
+  if (chB < 29) channelWidthB = 20;
+  else if (chB < 43) channelWidthB = 40;
+  else if (chB < 50) channelWidthB = 80;
+  else channelWidthB = 160;
 
-  if (channelNumberC < 30) channelWidthC = 20;
-  else if (channelNumberC < 44) channelWidthC = 40;
-  else channelWidthC = 60;
-  */
+  if (chC < 29) channelWidthC = 20;
+  else if (chC < 43) channelWidthC = 40;
+  else if (chC < 50) channelWidthC = 80;
+  else channelWidthC = 160;
+  
+
   giA = 800 * int(pow(2, giVector.at(0)));
   giB = 800 * int(pow(2, giVector.at(1)));
   giC = 800 * int(pow(2, giVector.at(2)));
@@ -840,8 +831,8 @@ void update_channels (int i, Ptr<HybridBuildingsPropagationLossModel> lossModel,
   */
   
   // Set Outputs
-  set_channel_number(staNodes, apNode);
-  //set_channel_width();
+  set_channel_number();
+  set_channel_width();
   set_tx_power();
   set_guard_interval();
   set_mcs();
@@ -931,7 +922,7 @@ void compute_channels (Ptr<HybridBuildingsPropagationLossModel> lossModel,
   */
 
   // Set Outputs
-  set_channel_number(staNodes, apNode);
+  set_channel_number();
   set_channel_width();
   set_tx_power();
   set_guard_interval();

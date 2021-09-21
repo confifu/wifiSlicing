@@ -64,6 +64,7 @@
 #include "ns3/buildings-module.h"
 #include "ns3/ipv4-flow-classifier.h"
 #include <bits/stdc++.h>
+#include <random>
 
 #define ENDC    "\033[0m"
 #define ERROR   "\033[91m"
@@ -75,6 +76,21 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("wifi_dynamic");
 
+
+
+
+
+
+//Options
+//[0, 29] 20 MHz width
+//[30, 43]
+//[44, 53]
+int channelList[53] = {36,  40,  44,  48,  52,  56,  60,  64, 100, 104,
+                      108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
+                      149, 153, 157, 161, 165, 169, 173, 177, 181,  38,
+                       46,  54,  62, 102, 110, 118, 126, 134, 142, 151,
+                      159, 167, 175,  42,  58, 106, 122, 138, 155, 171,
+                       50, 114, 163};
 
 // Options
 uint32_t payloadSize = 1472;          // bytes (UDP)
@@ -437,7 +453,7 @@ void update_channels (int i, Ptr<HybridBuildingsPropagationLossModel> lossModel,
   {
   	// probErr[0][i] = (txPackets[0][i] - rxPackets[0][i]) / (double)txPackets[0][i];
     probErr[0][i] = ((txPackets[0][i]-txPackets[1][i]) - (rxPackets[0][i]-rxPackets[1][i])) / (double)(txPackets[0][i]-txPackets[1][i]);
-    std::cout << "Error Prob: " << probErr[0][i] << std::endl;
+    //std::cout << "Error Prob: " << probErr[0][i] << std::endl;
   }
 
   // Compute Outputs: channel width, channel number, guard interval, mcs, tx power
@@ -457,7 +473,69 @@ void update_channels (int i, Ptr<HybridBuildingsPropagationLossModel> lossModel,
   *
   *
   */
+
+
+
+  //channel number = [0, 52]
+  //gi = [0, 2]
+  //mcs = [0, 11]
+  //txPower = [1, 20]
+
+
+  std::random_device rd; // obtain a random number from hardware
+  std::mt19937 gen(rd()); // seed the generator
+  std::uniform_int_distribution<> chNum(0, 52);
+  std::uniform_int_distribution<> gi(0, 2);
+  std::uniform_int_distribution<> mcs(0, 11);
+  std::uniform_int_distribution<> txPower(1, 20);
   
+
+  int chA = chNum(gen);
+  int chB = chNum(gen);
+  int chC = chNum(gen);
+
+  channelNumberA = channelList[chA];
+  channelNumberB = channelList[chB];
+  channelNumberC = channelList[chC];
+
+  std::cout<< "channelid "<< chA <<" "<<chB<<" "<<chC<<std::endl;
+  std::cout<< "channelnums "<< channelNumberA <<" "<<channelNumberB<<" "<<channelNumberC<<std::endl;
+
+  if (chA < 29) channelWidthA = 20;
+  else if (chA < 43) channelWidthA = 40;
+  else if (chA < 50) channelWidthA = 80;
+  else channelWidthA = 160; 
+
+  if (chB < 29) channelWidthB = 20;
+  else if (chB < 43) channelWidthB = 40;
+  else if (chB < 50) channelWidthB = 80;
+  else channelWidthB = 160;
+
+  if (chC < 29) channelWidthC = 20;
+  else if (chC < 43) channelWidthC = 40;
+  else if (chC < 50) channelWidthC = 80;
+  else channelWidthC = 160;
+  
+  std::cout<< "channelwidth "<< channelWidthA <<" "<<channelWidthB<<" "<<channelWidthC<<std::endl;
+  
+  giA = 800 * int(pow(2, gi(gen)));
+  giB = 800 * int(pow(2, gi(gen)));
+  giC = 800 * int(pow(2, gi(gen)));
+  
+  std::cout<<"gi "<< giA <<" "<< giB <<" "<< giC<<std::endl;
+  
+  mcsA = mcs(gen);
+  mcsB = mcs(gen);
+  mcsC = mcs(gen);
+
+  std::cout<<"mcs "<< mcsA <<" "<< mcsB <<" "<< mcsC<<std::endl;
+  
+  txPowerA = txPower(gen);
+  txPowerB = txPower(gen);
+  txPowerC = txPower(gen);
+
+  std::cout<< "txPower "<< txPowerA <<" "<< txPowerB <<" "<< txPowerC <<std::endl;
+    
   // Set Outputs
   set_channel_number();
   set_channel_width();
