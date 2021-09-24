@@ -104,7 +104,7 @@ double x_max = 20.0;                  // meters
 double y_max = 10.0;                  // meters
 double z_max = 3.0;                   // meters
 const int nStaA = 6;                  // number of stations A
-const int nStaB = 10;                // number of stations B
+const int nStaB = 100;                // number of stations B
 const int nStaC = 2;                  // number of stations C
 
 
@@ -684,13 +684,11 @@ bool MyExecuteActions(Ptr<OpenGymDataContainer> action)
   int chA = chNumVector.at(0);
   int chB = chNumVector.at(1);
   int chC = chNumVector.at(2);
-  
-  
+
   channelNumberA = channelList[chA];
   channelNumberB = channelList[chB];
   channelNumberC = channelList[chC];
 
-  
   if (chA < 29) channelWidthA = 20;
   else if (chA < 43) channelWidthA = 40;
   else if (chA < 50) channelWidthA = 80;
@@ -705,7 +703,6 @@ bool MyExecuteActions(Ptr<OpenGymDataContainer> action)
   else if (chC < 43) channelWidthC = 40;
   else if (chC < 50) channelWidthC = 80;
   else channelWidthC = 160;
-  
 
   giA = 800 * int(pow(2, giVector.at(0)));
   giB = 800 * int(pow(2, giVector.at(1)));
@@ -836,44 +833,6 @@ void update_channels (int i, Ptr<HybridBuildingsPropagationLossModel> lossModel,
   set_tx_power();
   set_guard_interval();
   set_mcs();
-
-  //uncomment to write output to file
-  /*
-  // Write file
-  std::ofstream out ((outDir + csvFileName).c_str (), std::ios::app);
-  
-  //write Data for slice A
-  out << "slice,channelNumber,channelWidth,gi,mcs,txPower" << std::endl;
-  out << "A," << channelNumberA << "," << channelWidthA << "," << giA << "," << mcsA << "," << txPowerA << std::endl;
-  out << "station no.," << "dataRate," << "x_loc," << "y_loc," << "txPackets," << "rxPackets," << "latency," << std::endl;
-  for (int i = 0; i < nStaA; i++)
-  {
-    out << i << "," << dataRateA[i] << "," << x[i] << "," << y[i] << ","
-    << txPackets[0][i] << "," << rxPackets[0][i] << "," << latency[0][i]
-    << std::endl;
-  }
-
-  //write Data for slice B
-  out << "slice,channelNumber,channelWidth, gi,mcs,txPower" << std::endl;
-  out << "B," << channelNumberB << "," << channelWidthB << "," << giB << "," << mcsB << "," << txPowerB << std::endl;
-  out << "station no.," << "dataRate," << "x_loc," << "y_loc," << "txPackets," << "rxPackets," << "latency," << std::endl;
-  for (int i = 0; i < nStaB; i++)
-  {
-    out << i << "," << dataRateB[i] << "," << x[nStaA+i] << "," << y[nStaA+i] << ","
-    << txPackets[0][nStaA+i] << "," << rxPackets[0][nStaA+i] << "," << latency[0][nStaA+i] << std::endl;
-  }
-
-  //write Data for slice C
-  out << "slice,channelNumber,channelWidth,gi,mcs,txPower" << std::endl;
-  out << "C," << channelNumberC << "," << channelWidthC << "," << giC << "," << mcsC << "," << txPowerC << std::endl;
-  out << "station no.," << "dataRate," << "x_loc," << "y_loc," << "txPackets," << "rxPackets," << "latency," << std::endl;
-  for (int i = 0; i < nStaC; i++)
-  {
-    out << i << "," << dataRateC[i] << "," << x[nStaA+nStaB+i] << "," << y[nStaA+nStaB+i] << ","
-    << txPackets[0][nStaA+nStaB+i] << "," << rxPackets[0][nStaA+nStaB+i] << "," << latency[0][nStaA+nStaB+i] << std::endl;
-  }
-  out.close ();
-  */
 }
 
 
@@ -1344,91 +1303,8 @@ int main (int argc, char *argv[])
   
   Simulator::Run ();
 
-  /*
-  // Activate/deactivate the histograms and the per-probe detailed stats
-  std::cout << OKBLUE <<"Writing to file:"<<outDir << "FlowMonitorFile.xml"<< ENDC << std::endl;
-  flowMonitor->SerializeToXmlFile(outDir + "FlowMonitorFile.xml", false, false);
-
-  // Show results
-  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowHelper.GetClassifier ());
-  FlowMonitor::FlowStatsContainer stats = flowMonitor->GetFlowStats ();
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
-  {
-    txPackets_unsort[i->first-1] = i->second.txPackets;
-    rxPackets_unsort[i->first-1] = i->second.rxPackets;
-    latency_unsort[i->first-1] = i->second.delaySum.ToDouble(Time::MS) / i->second.rxPackets;
-    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-    destPorts[i->first-1] = t.destinationPort;
-    //std::cout << "Flow " << i->first << " (" << t.sourceAddress << " -> " << t.destinationAddress << "," << destPorts[i->first-1] << ")\n";
-    //std::cout << "  Tx Packets: " << totTxPackets[i->first-1] << "\n";
-    //std::cout << "  Rx Packets: " << totRxPackets[i->first-1] << "\n";
-    //std::cout << "  Delay Sum: " << totDelay[i->first-1] << "\n";
-    //std::cout << "  Delay Sum MS: " << i->second.delaySum.ToDouble(Time::MS) << "\n";
-    //std::cout << "  Delay: " << i->second.delaySum / i->second.rxPackets << "\n";
-    //std::cout << "  Delay MS: " << i->second.delaySum.ToDouble(Time::MS) / i->second.rxPackets << "\n";
-  }
-  // Shift txPackets, rxPackets and latency
-  for (int i = 0; i < nStaA+nStaB+nStaC; i++)
-  {
-  	txPackets[1][i] = txPackets[0][i];
-  	rxPackets[1][i] = rxPackets[0][i];
-  	latency[1][i] = latency[0][i];
-  }
-  // Compute txPackets, rxPackets and latency
-  for (int i = 0; i < nStaA+nStaB+nStaC; i++)
-  {
-    txPackets[0][destPorts[i]-5001] = txPackets_unsort[i];
-    rxPackets[0][destPorts[i]-5001] = rxPackets_unsort[i];
-    latency[0][destPorts[i]-5001] = latency_unsort[i];
-  }
-  
-
-  timeNow = time(0);
-  ctimeNow =ctime(&timeNow);
-  std::cout << OKBLUE << "Simulation finished! Time: " << ctimeNow << ENDC;
-  */
-
   openGym->NotifySimulationEnd();
   Simulator::Destroy ();
 
-  /*
-  // Write file csvFileName.csv
-  std::cout << OKBLUE <<"Writing to file: " << csvFileName << ENDC << std::endl;
-  // std::ofstream out (csvFileName.c_str ()); // Use it to overwrite the file
-  std::ofstream out ((outDir + csvFileName).c_str (), std::ios::app);
-
-  //write Data for slice A
-  out << "slice,fin_channelNumber,channelWidth,gi,mcs,txPower" << std::endl;
-  out << "A," << channelNumberA << "," << channelWidthA << "," << giA << "," << mcsA << "," << txPowerA << std::endl;
-  out << "station no.," << "dataRate," << "x_loc," << "y_loc," << "txPackets," << "rxPackets," << "latency," << std::endl;
-  for (int i = 0; i < nStaA; i++)
-  {
-    out << i << "," << dataRateA[i] << "," << x[i] << "," << y[i] << ","
-    << txPackets[0][i] << "," << rxPackets[0][i] << "," << latency[0][i]
-    << std::endl;
-  }
-
-  //write Data for slice B
-  out << "slice,fin_channelNumber,channelWidth,gi,mcs,txPower" << std::endl;
-  out << "B," << channelNumberB << "," << channelWidthB << "," << giB << "," << mcsB << "," << txPowerB << std::endl;
-  out << "station no.," << "dataRate," << "x_loc," << "y_loc," << "txPackets," << "rxPackets," << "latency," << std::endl;
-  for (int i = 0; i < nStaB; i++)
-  {
-    out << i << "," << dataRateB[i] << "," << x[nStaA+i] << "," << y[nStaA+i] << ","
-    << txPackets[0][nStaA+i] << "," << rxPackets[0][nStaA+i] << "," << latency[0][nStaA+i] << std::endl;
-  }
-
-  //write Data for slice C
-  out << "slice,fin_channelNumber,channelWidth,gi,mcs,txPower" << std::endl;
-  out << "C," << channelNumberC << "," << channelWidthC << "," << giC << "," << mcsC << "," << txPowerC << std::endl;
-  out << "station no.," << "dataRate," << "x_loc," << "y_loc," << "txPackets," << "rxPackets," << "latency," << std::endl;
-  for (int i = 0; i < nStaC; i++)
-  {
-    out << i << "," << dataRateC[i] << "," << x[nStaA+nStaB+i] << "," << y[nStaA+nStaB+i] << ","
-    << txPackets[0][nStaA+nStaB+i] << "," << rxPackets[0][nStaA+nStaB+i] << "," << latency[0][nStaA+nStaB+i] << std::endl;
-  }
-  out.close ();
-  */
-  
   return 0;
 }
