@@ -1,89 +1,79 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import argparse
+import click
 from ns3gym import ns3env
+from tqdm import tqdm
+from Model import ModelHelper
+import torch
 
-__author__ = "Piotr Gawlowicz"
-__copyright__ = "Copyright (c) 2018, Technische Universität Berlin"
-__version__ = "0.1.0"
-__email__ = "gawlowicz@tkn.tu-berlin.de"
+@click.command()
+@click.pass_context
+@click.option('--start_sim', type=bool, default=True, help='Start simulation', show_default=True)
+@click.option('--iterations', type=int, default=10, help='Number of iterations', show_default=True)
+@click.option('--sim_time', type=int, default = 20, help='Simulation time in seconds', show_default=True)
+@click.option('--resume_from', help='Checkpoint from which to resume', type=str, metavar='FILE')
+@click.option('--outdir', help='Where to save the new checkpoint', type=str, required=False, metavar='DIR')
+@click.option('--debug', type=bool, default=False, help='Print debug outputs', show_default=True)
+def runSimulation(
+    ctx: click.Context,
+    start_sim: bool,
+    iterations: int,
+    sim_time: int,
+    resume_from: str,
+    outdir: str,
+    debug: bool
+):
+    """
+    Train the model.
+    """
+
+    port = 5555
+    seed = 0
+    step_time = 1.0       # Do not change
+    simArgs = {"--simulationTime": sim_time,
+            "--testArg": 123}
+    
+    env = ns3env.Ns3Env(port=port, stepTime=step_time, startSim=start_sim, simSeed=seed, simArgs=simArgs, debug=debug)
+    # simpler:
+    #env = ns3env.Ns3Env()
+    env.reset()
+
+    if debug:
+        ob_space = env.observation_space
+        ac_space = env.action_space
+        print("Obseration space", ob_space)
+        print("Action space", ac_space)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    helper = ModelHelper(device)
+    try:
+        for currIt in tqdm(range(iterations)):
+            obs = env.reset()
+            stepIdx = 0
+            done = False
+            pbar = tqdm(total=sim_time // step_time)
+            while not done:
+                #Update calls start from 2 secs.
+                if stepIdx < 2:
+                    action = env.action_space.sample()
+                    obs_cur, _, done, _ = env.step(action)
+
+                else:
+                    actionTuple = helper.getActionTuple(obs_prev, action)
+                    action = helper.getActionFromActionTuple(actionTuple, action)
+                    obs_cur, _, done, _ = env.step(action)
+
+                    #sas' (reward is a funciton of s in this case)
+                    helper.trainModel(obs_prev, action, actionTuple, obs_cur)
+                obs_prev = obs_cur
+                stepIdx += 1
+                pbar.update(1)
+            pbar.close()
+
+    except KeyboardInterrupt:
+        print("Ctrl-C -> Exit")
+    finally:
+        env.close()
+        print("Done")
 
 
-parser = argparse.ArgumentParser(description='Start simulation script on/off')
-parser.add_argument('--start',
-                    type=int,
-                    default=1,
-                    help='Start ns-3 simulation script 0/1, Default: 1')
-parser.add_argument('--iterations',
-                    type=int,
-                    default=10,
-                    help='Number of iterations, Default: 1')
-args = parser.parse_args()
-startSim = bool(args.start)
-iterationNum = int(args.iterations)
-
-port = 5555
-simTime = 20 # seconds
-stepTime = 1.0  # seconds
-seed = 0
-simArgs = {"--simTime": simTime,
-           "--testArg": 123}
-debug = True
-env = ns3env.Ns3Env(port=port, stepTime=stepTime, startSim=startSim, simSeed=seed, simArgs=simArgs, debug=debug)
-# simpler:
-#env = ns3env.Ns3Env()
-env.reset()
-
-ob_space = env.observation_space
-ac_space = env.action_space
-print("Observation space: ", ob_space,  ob_space.dtype)
-print("Action space: ", ac_space, ac_space.dtype)
-
-stepIdx = 0
-currIt = 0
-
-try:
-    while True:
-        print("Start iteration: ", currIt)
-        obs = env.reset()
-        #print("Step: ", stepIdx)
-        #print("---obs:", obs)
-
-        while True:
-            stepIdx += 1
-            print("Step: ", stepIdx)
-            action = env.action_space.sample()
-            #print("---action: ", action["chNum"])    
-
-            try:
-                print("About to change action values, Python")
-                obs, reward, done, info = env.step(action)
-                print("Changed action values and read obs, Python")
-            except:
-                print("got an error")
-                reward = -100.0
-                done = True
-            #print("---obs, reward, done, info: ", obs["SliceA"], reward, done, info)
-            
-            #print("dataRate", obs["SliceA"][0])
-            #print("txPackets", obs["SliceA"][1])
-            #print("rxPackets", obs["SliceA"][2])
-            #print("latency", obs["SliceA"][3])
-
-            if done:
-                stepIdx = 0
-                if currIt + 1 < iterationNum:
-                    env.reset()
-                break
-        
-
-        currIt += 1
-        if currIt == iterationNum:
-            break
-
-except KeyboardInterrupt:
-    print("Ctrl-C -> Exit")
-finally:
-    env.close()
-    print("Done")
+if __name__ == "__main__":
+    runSimulation()
