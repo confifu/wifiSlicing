@@ -1298,7 +1298,7 @@ ApWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
                       m_nonErpStations.unique ();
                     }
                   NS_LOG_DEBUG ("Send association response with success status");
-                  SendAssocResp (hdr->GetAddr2 (), true, false);
+                  SendAssocResp (hdr->GetAddr2 (), true, true);
                 }
               return;
             }
