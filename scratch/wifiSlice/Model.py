@@ -147,6 +147,7 @@ class ModelHelper():
 
     def getInputFeaturesFromObservation(self, obs):
         obsTensors = self.convertObsToTensors(obs)
+        obsTensors = self.normalizeObs(obsTensors)
         funcs = [torch.mean, torch.var, torch.min, torch.max]
         featuresA = torch.stack([func(elem) for elem in obsTensors[0] for func in funcs])
         featuresB = torch.stack([func(elem) for elem in obsTensors[1] for func in funcs])
@@ -179,11 +180,38 @@ class ModelHelper():
                 (drB, tpB, rpB, lB, rPowB),
                 (drC, tpC, rpC, lC, rPowC)]
 
+    def normalizeObs(self, obsTensors):
+        (drA, tpA, rpA, lA, rPowA),(drB, tpB, rpB, lB, rPowB),(drC, tpC, rpC, lC, rPowC) = obsTensors
+        drA = drA / 100
+        tpA = tpA / 100000
+        rpA = rpA / 100000
+        lA = lA / 1000
+        rPowA = rPowA / 20
+
+        drB = drB / 100000
+        tpB = tpB / 100
+        rpB = rpB / 100
+        lB = lA / 1000
+        rPowB = rPowB / 20
+
+        drC = drC / 100
+        tpC = tpC / 100000
+        rpC = tpC / 100000
+        lC = lC / 1000
+        rPowC = rPowC / 20
+        return [(drA, tpA, rpA, lA, rPowA),
+                (drB, tpB, rpB, lB, rPowB),
+                (drC, tpC, rpC, lC, rPowC)]
+
+
     def convertActionToTensor(self, action):
-        chNum = torch.Tensor(action["chNum"]).float()
+        '''
+        Convert to tensor and normalize
+        '''
+        chNum = torch.Tensor(action["chNum"]).float() / 60
         gi = torch.Tensor(action["gi"]).float()
-        mcs = torch.Tensor(action["mcs"]).float()
-        txPower = torch.Tensor(action["txPower"]).float()
+        mcs = torch.Tensor(action["mcs"]).float() / 10
+        txPower = torch.Tensor(action["txPower"]).float() / 20
 
         return torch.stack([chNum, gi, mcs, txPower]).transpose(0, 1)
 
