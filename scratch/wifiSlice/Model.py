@@ -163,9 +163,7 @@ class BasicModel(nn.Module):
             nn.ReLU(),
             nn.Linear(pow(2, 7), pow(2, 9)),
             nn.ReLU(),
-            nn.Linear(pow(2, 9), pow(2, 11)),
-            nn.ReLU(),
-            nn.Linear(pow(2, 11), output_size)
+            nn.Linear(pow(2, 9), output_size)
         )
     def forward(self, x):
         x = self.layers(x)
