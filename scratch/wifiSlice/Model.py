@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from random import randint as ri
 
 def multiDimArgmax(arr):
     #TODO : Make it work for batch
@@ -18,13 +19,14 @@ class ModelHelper():
     '''
     Helper class that trains the model and returns actions, targets for a given state
     '''
-    def __init__(self, device, outdir, resume_from):
+    def __init__(self, device, outdir, resume_from, epsilon = 0.9):
         self.device = device
         self.model = BasicModel().to(self.device)
         self.optim = torch.optim.Adam(lr=10e-4, params=self.model.parameters())
         self.outdir = outdir
         self.prevEpoch = -1
         self.trainLosses = []
+        self.epsilon = epsilon
         if resume_from is not None:
             checkpoint = torch.load(resume_from)
             self.prevEpoch = checkpoint['epoch']
@@ -38,12 +40,14 @@ class ModelHelper():
             del checkpoint
 
     def getActionTuple(self, obs, action):
-        #Todo : epsilon exploration
         '''
         Returns a vector with values {0,1,2} using the trained model and
         last observation and action, The vector decides whether a variable
         should be decreased, increased or remain constant.
         '''
+
+        if ri(0, 10)/10 > self.epsilon:
+            return tuple([ri(0, 2) for i in range(12)])
 
         with torch.no_grad():
             self.model.train(False)
