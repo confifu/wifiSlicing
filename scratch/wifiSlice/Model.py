@@ -18,10 +18,24 @@ class ModelHelper():
     '''
     Trains the model and returns actions, targets for a given state
     '''
-    def __init__(self, device):
+    def __init__(self, device, outdir, resume_from):
         self.device = device
         self.model = BasicModel().to(self.device)
         self.optim = torch.optim.Adam(lr=10e-4, params=self.model.parameters())
+        self.outdir = outdir
+        self.prevEpoch = -1
+        self.trainLosses = []
+        if resume_from is not None:
+            checkpoint = torch.load(resume_from)
+            self.prevEpoch = checkpoint['epoch']
+
+            print("Resuming from checkpoint at, ", resume_from, ", epoch, ", self.prevEpoch)
+
+            self.trainLosses = checkpoint['trainLosses']
+            self.model.load_state_dict(checkpoint['state_dict'], strict = True)
+            self.optim.load_state_dict(checkpoint['optimizer_state_dict'])
+
+            del checkpoint
     
     def getActionTuple(self, obs, action):
         #choose best action
@@ -92,6 +106,8 @@ class ModelHelper():
         loss.backward()
         self.optim.step()
 
+        return loss.item()
+
     def getTarget(self, obs, action):
         '''
         returns 
@@ -151,6 +167,18 @@ class ModelHelper():
         txPower = torch.Tensor(action["txPower"]).float()
 
         return torch.stack([chNum, gi, mcs, txPower]).transpose(0, 1)
+
+    def saveModel(self, trainLosses):
+        self.prevEpoch = self.prevEpoch + 1
+        self.trainLosses.extend(trainLosses)
+        checkpoint = {
+            'epoch': self.prevEpoch,
+            'state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optim.state_dict(),
+            'trainLosses' : self.trainLosses,
+        }
+        torch.save(checkpoint,
+                    self.outdir + "checkpoint" + str(self.prevEpoch) + '.pt')
 
 class BasicModel(nn.Module):
     def __init__(self):

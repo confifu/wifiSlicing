@@ -34,18 +34,21 @@ def runSimulation(
         print("Action space", ac_space)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    helper = ModelHelper(device)
+    helper = ModelHelper(device, outdir, resume_from)
     try:
+
         for currIt in tqdm(range(iterations)):
             obs = env.reset()
             stepIdx = 0
             done = False
             pbar = tqdm(total=sim_time // step_time)
+            losses = []
             while not done:
                 #Update calls start from 2 secs.
                 if stepIdx < 2:
                     action = env.action_space.sample()
                     obs_cur, _, done, _ = env.step(action)
+                    loss = None
 
                 else:
                     actionTuple = helper.getActionTuple(obs_prev, action)
@@ -53,11 +56,15 @@ def runSimulation(
                     obs_cur, _, done, _ = env.step(action)
 
                     #sas' (reward is a funciton of s in this case)
-                    helper.trainModel(obs_prev, action, actionTuple, obs_cur)
+                    loss = helper.trainModel(obs_prev, action, actionTuple, obs_cur)
                 obs_prev = obs_cur
                 stepIdx += 1
+                losses.append(loss)
+                pbar.set_postfix({'Loss': loss,
+                                  'Other info': "Some variable"})
                 pbar.update(1)
             pbar.close()
+            helper.saveModel(losses)
 
     except KeyboardInterrupt:
         print("Ctrl-C -> Exit")
