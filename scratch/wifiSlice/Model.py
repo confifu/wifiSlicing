@@ -16,7 +16,7 @@ def chWidthFromChNum(chNum):
 
 class ModelHelper():
     '''
-    Trains the model and returns actions, targets for a given state
+    Helper class that trains the model and returns actions, targets for a given state
     '''
     def __init__(self, device, outdir, resume_from):
         self.device = device
@@ -36,10 +36,14 @@ class ModelHelper():
             self.optim.load_state_dict(checkpoint['optimizer_state_dict'])
 
             del checkpoint
-    
+
     def getActionTuple(self, obs, action):
-        #choose best action
-        #explore
+        #Todo : epsilon exploration
+        '''
+        Returns a vector with values {0,1,2} using the trained model and
+        last observation and action, The vector decides whether a variable
+        should be decreased, increased or remain constant.
+        '''
 
         with torch.no_grad():
             self.model.train(False)
@@ -58,13 +62,14 @@ class ModelHelper():
 
     def getActionFromActionTuple(self, action_tuple, action):
         '''
+        Returns a new action(that can be put into simulations) from action tuple
         increments or decrements action values based on the action tuple
         0 --> -1
         1 --> do nothing
         2 --> +1
 
-        also if value is min no decrement is possible and
-             if value is max no increment is possible
+        if value is min no decrement is possible and
+        if value is max no increment is possible
         '''
         action_names = ["chNum", "gi", "mcs", "txPower"]
         max_min_dict = {
@@ -83,6 +88,10 @@ class ModelHelper():
 
     def trainModel(self, obs, action, action_tuple, obs_new):
         '''
+        Use the new observation to train the model. Also returns the loss of this step.
+        obs, action are input to the model. The model predicts the target for all possible
+        actions. action_tuple is used to select the predicted target for the best action we
+        chose before. Real target value is predicted using obs_new.
         obs --> action --> obs_new
         '''
 
@@ -93,6 +102,7 @@ class ModelHelper():
         featA = torch.cat([featA, actA])
         featB = torch.cat([featB, actB])
         featC = torch.cat([featC, actC])
+        #Todo : Normalize
 
         x = torch.cat([featA, featB, featC]).unsqueeze(0).to(self.device)
         prediction = self.model(x)
@@ -110,8 +120,8 @@ class ModelHelper():
 
     def getTarget(self, obs, action):
         '''
-        returns 
-        - Latency, done
+        returns a function of the following
+        - Latency
         - Error probability (tx-rx)/tx
         - Transmission power
         - Spectral efficiency (sum(rxpackets)/time)/bandwidth
@@ -181,6 +191,10 @@ class ModelHelper():
                     self.outdir + "checkpoint" + str(self.prevEpoch) + '.pt')
 
 class BasicModel(nn.Module):
+    '''
+    Basic model that predicts target value for 3^12 possible actions
+    given the previous observation and the action.
+    '''
     def __init__(self):
         super(BasicModel, self).__init__()
         input_size = 60
