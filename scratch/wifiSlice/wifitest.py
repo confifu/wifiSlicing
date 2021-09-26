@@ -1,19 +1,10 @@
-import click
 from ns3gym import ns3env
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 from Model import ModelHelper
 import torch
 
-@click.command()
-@click.pass_context
-@click.option('--start_sim', type=bool, default=True, help='Start simulation', show_default=True)
-@click.option('--iterations', type=int, default=10, help='Number of iterations', show_default=True)
-@click.option('--sim_time', type=int, default = 20, help='Simulation time in seconds', show_default=True)
-@click.option('--resume_from', help='Checkpoint from which to resume', type=str, metavar='FILE')
-@click.option('--outdir', help='Where to save the new checkpoint', type=str, required=False, metavar='DIR')
-@click.option('--debug', type=bool, default=False, help='Print debug outputs', show_default=True)
+
 def runSimulation(
-    ctx: click.Context,
     start_sim: bool,
     iterations: int,
     sim_time: int,
@@ -71,9 +62,7 @@ def runSimulation(
     except KeyboardInterrupt:
         print("Ctrl-C -> Exit")
     finally:
-        env.close()
+        print("Closing env")
+        del env
+        #env.close()
         print("Done")
-
-
-if __name__ == "__main__":
-    runSimulation()
