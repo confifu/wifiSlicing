@@ -186,12 +186,15 @@ Ptr<OpenGymSpace> MyGetObservationSpace(void)
   Ptr<OpenGymBoxSpace> rxPacketsA = CreateObject<OpenGymBoxSpace> (0, 100000, shapeA, intDtype);
   //Latency 
   Ptr<OpenGymBoxSpace> latencyA = CreateObject<OpenGymBoxSpace> (0, 100000, shapeA, floatDtype);
+  //rxPower 
+  Ptr<OpenGymBoxSpace> rxPowerA = CreateObject<OpenGymBoxSpace> (0, 100000, shapeA, floatDtype);
   
   Ptr<OpenGymTupleSpace> allNodeStatsA = CreateObject<OpenGymTupleSpace> ();
   allNodeStatsA->Add(dataRateA);
   allNodeStatsA->Add(txPacketsA);
   allNodeStatsA->Add(rxPacketsA);  
   allNodeStatsA->Add(latencyA);
+  allNodeStatsA->Add(rxPowerA);
 
   //Slice B
   std::vector<uint32_t> shapeB = {nStaB,};
@@ -204,13 +207,16 @@ Ptr<OpenGymSpace> MyGetObservationSpace(void)
   Ptr<OpenGymBoxSpace> rxPacketsB = CreateObject<OpenGymBoxSpace> (0, 100000, shapeB, intDtype);
   //Latency
   Ptr<OpenGymBoxSpace> latencyB = CreateObject<OpenGymBoxSpace> (0, 100000, shapeB, floatDtype);
+  //rxPower 
+  Ptr<OpenGymBoxSpace> rxPowerB = CreateObject<OpenGymBoxSpace> (0, 100000, shapeB, floatDtype);
   
   Ptr<OpenGymTupleSpace> allNodeStatsB = CreateObject<OpenGymTupleSpace> ();
   allNodeStatsB->Add(dataRateB);
   allNodeStatsB->Add(txPacketsB);
   allNodeStatsB->Add(rxPacketsB);  
   allNodeStatsB->Add(latencyB);
-  
+  allNodeStatsB->Add(rxPowerB);
+
   //Slice C
   std::vector<uint32_t> shapeC = {nStaC,};
   //Data Rate
@@ -221,12 +227,15 @@ Ptr<OpenGymSpace> MyGetObservationSpace(void)
   Ptr<OpenGymBoxSpace> rxPacketsC = CreateObject<OpenGymBoxSpace> (0, 100000, shapeC, intDtype);
   //Latency
   Ptr<OpenGymBoxSpace> latencyC = CreateObject<OpenGymBoxSpace> (0, 100000, shapeC, floatDtype);
+  //rxPower 
+  Ptr<OpenGymBoxSpace> rxPowerC = CreateObject<OpenGymBoxSpace> (0, 100000, shapeC, floatDtype);
   
   Ptr<OpenGymTupleSpace> allNodeStatsC = CreateObject<OpenGymTupleSpace> ();
   allNodeStatsC->Add(dataRateC);
   allNodeStatsC->Add(txPacketsC);
   allNodeStatsC->Add(rxPacketsC);
   allNodeStatsC->Add(latencyC);
+  allNodeStatsC->Add(rxPowerC);
 
 
   Ptr<OpenGymDictSpace> space = CreateObject<OpenGymDictSpace> ();
@@ -320,12 +329,18 @@ Ptr<OpenGymDataContainer> MyGetObservation(void)
     int value = latency[0][i];
     latencyA->AddValue(value);
   }
-
+  //rxPower 
+  Ptr<OpenGymBoxContainer<float> > rxPowerA = CreateObject<OpenGymBoxContainer<float> > (shapeA);
+  for (uint32_t i = 0; i<nStaA; i++){
+    int value = rxPower[i];
+    rxPowerA->AddValue(value);
+  }
   Ptr<OpenGymTupleContainer> allNodeStatsA = CreateObject<OpenGymTupleContainer> ();
   allNodeStatsA->Add(rateA);
   allNodeStatsA->Add(txPacketsA);
   allNodeStatsA->Add(rxPacketsA);  
   allNodeStatsA->Add(latencyA);
+  allNodeStatsA->Add(rxPowerA);
 
 
   //Slice B
@@ -352,12 +367,18 @@ Ptr<OpenGymDataContainer> MyGetObservation(void)
     int value = latency[0][i];
     latencyB->AddValue(value);
   }
-
+  //rxPower 
+  Ptr<OpenGymBoxContainer<float> > rxPowerB = CreateObject<OpenGymBoxContainer<float> > (shapeB);
+  for (uint32_t i = nStaA; i < nStaA + nStaB; i++){
+    int value = rxPower[i];
+    rxPowerB->AddValue(value);
+  }
   Ptr<OpenGymTupleContainer> allNodeStatsB = CreateObject<OpenGymTupleContainer> ();
   allNodeStatsB->Add(rateB);
   allNodeStatsB->Add(txPacketsB);
   allNodeStatsB->Add(rxPacketsB);  
   allNodeStatsB->Add(latencyB);
+  allNodeStatsB->Add(rxPowerB);
   
   //Slice C
   std::vector<uint32_t> shapeC = {nStaC,};
@@ -385,12 +406,18 @@ Ptr<OpenGymDataContainer> MyGetObservation(void)
     int value = latency[0][i];
     latencyC->AddValue(value);
   }
-
+  //rxPower 
+  Ptr<OpenGymBoxContainer<float> > rxPowerC = CreateObject<OpenGymBoxContainer<float> > (shapeC);
+  for (uint32_t i = nStaA + nStaB; i < nStaA + nStaB + nStaC; i++){
+    int value = rxPower[i];
+    rxPowerC->AddValue(value);
+  }
   Ptr<OpenGymTupleContainer> allNodeStatsC = CreateObject<OpenGymTupleContainer> ();
   allNodeStatsC->Add(rateC);
   allNodeStatsC->Add(txPacketsC);
   allNodeStatsC->Add(rxPacketsC);  
   allNodeStatsC->Add(latencyC);
+  allNodeStatsC->Add(rxPowerC);
 
   //aggregate all slices
   Ptr<OpenGymDictContainer> space = CreateObject<OpenGymDictContainer> ();

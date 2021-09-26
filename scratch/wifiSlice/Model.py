@@ -152,7 +152,7 @@ class ModelHelper():
         featuresB = torch.stack([func(elem) for elem in obsTensors[1] for func in funcs])
         featuresC = torch.stack([func(elem) for elem in obsTensors[2] for func in funcs])
 
-        #print(featuresA.shape)  #(16-d vector)
+        #print(featuresA.shape)  #(20-d vector)
         return featuresA, featuresB, featuresC
 
     def convertObsToTensors(self, obs):
@@ -160,19 +160,24 @@ class ModelHelper():
         tpA = torch.Tensor(obs["SliceA"][1]).float()      #txpackets
         rpA = torch.Tensor(obs["SliceA"][2]).float()      #rxpackets
         lA = torch.Tensor(obs["SliceA"][3]).float()       #latency
+        rPowA = torch.Tensor(obs["SliceA"][4]).float()    #rxPower
 
         drB = torch.Tensor(obs["SliceB"][0]).float()
         tpB = torch.Tensor(obs["SliceB"][1]).float()
         rpB = torch.Tensor(obs["SliceB"][2]).float()
         lB = torch.Tensor(obs["SliceB"][3]).float()
+        rPowB = torch.Tensor(obs["SliceB"][4]).float()
+
 
         drC = torch.Tensor(obs["SliceC"][0]).float()
         tpC = torch.Tensor(obs["SliceC"][1]).float()
         rpC = torch.Tensor(obs["SliceC"][2]).float()
         lC = torch.Tensor(obs["SliceC"][3]).float()
-        return [(drA, tpA, rpA, lA),
-                (drB, tpB, rpB, lB),
-                (drC, tpC, rpC, lC)]
+        rPowC = torch.Tensor(obs["SliceC"][4]).float()
+
+        return [(drA, tpA, rpA, lA, rPowA),
+                (drB, tpB, rpB, lB, rPowB),
+                (drC, tpC, rpC, lC, rPowC)]
 
     def convertActionToTensor(self, action):
         chNum = torch.Tensor(action["chNum"]).float()
@@ -201,7 +206,7 @@ class BasicModel(nn.Module):
     '''
     def __init__(self):
         super(BasicModel, self).__init__()
-        input_size = 60
+        input_size = 72
         output_size = pow(3, 12)
 
         self.layers = nn.Sequential(
