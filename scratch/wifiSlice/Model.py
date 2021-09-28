@@ -19,7 +19,7 @@ class ModelHelper():
     '''
     Helper class that trains the model and returns actions, targets for a given state
     '''
-    def __init__(self, device, outdir, resume_from, epsilon = 0.9):
+    def __init__(self, device, outdir, resume_from, epsilon = 0.1):
         self.device = device
         self.model = BasicModel().to(self.device)
         self.optim = torch.optim.Adam(lr=10e-4, params=self.model.parameters())
