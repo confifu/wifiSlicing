@@ -166,24 +166,24 @@ class ModelHelper():
         return featuresA, featuresB, featuresC
 
     def convertObsToTensors(self, obs):
-        drA = torch.Tensor(obs["SliceA"][0]).float()      #datarate
-        tpA = torch.Tensor(obs["SliceA"][1]).float()      #txpackets
-        rpA = torch.Tensor(obs["SliceA"][2]).float()      #rxpackets
-        lA = torch.Tensor(obs["SliceA"][3]).float()       #latency
-        rPowA = torch.Tensor(obs["SliceA"][4]).float()    #rxPower
+        drA = torch.nan_to_num(torch.Tensor(obs["SliceA"][0]).float(), nan=0.0)      #datarate
+        tpA = torch.nan_to_num(torch.Tensor(obs["SliceA"][1]).float(), nan=1.0)      #txpackets
+        rpA = torch.nan_to_num(torch.Tensor(obs["SliceA"][2]).float(), nan=0.0)      #rxpackets
+        lA = torch.nan_to_num(torch.Tensor(obs["SliceA"][3]).float(), nan=5000.0)    #latency
+        rPowA = torch.nan_to_num(torch.Tensor(obs["SliceA"][4]).float(), nan=0.0)    #rxPower
 
-        drB = torch.Tensor(obs["SliceB"][0]).float()
-        tpB = torch.Tensor(obs["SliceB"][1]).float()
-        rpB = torch.Tensor(obs["SliceB"][2]).float()
-        lB = torch.Tensor(obs["SliceB"][3]).float()
-        rPowB = torch.Tensor(obs["SliceB"][4]).float()
+        drB = torch.nan_to_num(torch.Tensor(obs["SliceB"][0]).float(), nan=0.0)
+        tpB = torch.nan_to_num(torch.Tensor(obs["SliceB"][1]).float(), nan=1.0)
+        rpB = torch.nan_to_num(torch.Tensor(obs["SliceB"][2]).float(), nan=0.0)
+        lB = torch.nan_to_num(torch.Tensor(obs["SliceB"][3]).float(), nan=5000.0)
+        rPowB = torch.nan_to_num(torch.Tensor(obs["SliceB"][4]).float(), nan=0.0)
 
 
-        drC = torch.Tensor(obs["SliceC"][0]).float()
-        tpC = torch.Tensor(obs["SliceC"][1]).float()
-        rpC = torch.Tensor(obs["SliceC"][2]).float()
-        lC = torch.Tensor(obs["SliceC"][3]).float()
-        rPowC = torch.Tensor(obs["SliceC"][4]).float()
+        drC = torch.nan_to_num(torch.Tensor(obs["SliceC"][0]).float(), nan=0.0)
+        tpC = torch.nan_to_num(torch.Tensor(obs["SliceC"][1]).float(), nan=1.0)
+        rpC = torch.nan_to_num(torch.Tensor(obs["SliceC"][2]).float(), nan=0.0)
+        lC = torch.nan_to_num(torch.Tensor(obs["SliceC"][3]).float(), nan=5000.0)
+        rPowC = torch.nan_to_num(torch.Tensor(obs["SliceC"][4]).float(), nan=0.0)
 
         return [(drA, tpA, rpA, lA, rPowA),
                 (drB, tpB, rpB, lB, rPowB),
