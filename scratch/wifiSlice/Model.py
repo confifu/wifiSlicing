@@ -22,7 +22,8 @@ class ModelHelper():
     def __init__(self, device, outdir, resume_from, epsilon = 0.1):
         self.device = device
         self.model = BasicModel().to(self.device)
-        self.optim = torch.optim.Adam(lr=10e-4, params=self.model.parameters())
+        self.optim = torch.optim.Adam(lr=1e-4, params=self.model.parameters())
+        self.loss_fn = nn.MSELoss()
         self.outdir = outdir
         self.prevEpoch = -1
         self.trainLosses = []
@@ -114,13 +115,21 @@ class ModelHelper():
         #index using action tuple
         predicted_target = prediction[0][action_tuple]
         real_target = self.getTarget(obs_new, action).to(self.device)
-        loss = (predicted_target - real_target).pow(2).mean()
+        loss = self.loss_fn(predicted_target, real_target)
+        loss_value = loss.item()
         
         self.optim.zero_grad()
         loss.backward()
         self.optim.step()
 
-        return loss.item()
+        if np.isinf(loss_value):
+            print("Inf values in target ", torch.max(torch.isinf(real_target)))
+            print("Inf values in predicted ", torch.max(torch.isinf(predicted_target)))
+        if np.isnan(loss_value):
+            print("Nan values in target ", torch.max(torch.isnan(real_target)))
+            print("Nan values in predicted ", torch.max(torch.isnan(predicted_target)))
+
+        return loss_value
 
     def getTarget(self, obs, action):
         '''
