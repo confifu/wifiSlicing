@@ -3,10 +3,13 @@ import torch.nn as nn
 import numpy as np
 from random import randint as ri
 
-def multiDimArgmax(arr):
-    #TODO : Make it work for batch
+def multiDimBatchArgmax(arr):
+    '''
+    For a tensor of shape (N, D1, D2, ....) return a list of N tuples(indices)
+    for the max element for each element in the batch.
+    '''
     a = arr.cpu().numpy()
-    indices = np.unravel_index(np.argmax(a, axis=None), a.shape)
+    indices = [np.unravel_index(np.argmax(r), r.shape) for r in a]
     return indices
 
 def chWidthFromChNum(chNum):
@@ -19,7 +22,7 @@ class ModelHelper():
     '''
     Helper class that trains the model and returns actions, targets for a given state
     '''
-    def __init__(self, device, outdir, resume_from, epsilon = 0.1):
+    def __init__(self, device, outdir, resume_from, batch_size = 4, epsilon = 0.1):
         self.device = device
         self.model = BasicModel().to(self.device)
         self.optim = torch.optim.Adam(lr=1e-4, params=self.model.parameters())
@@ -27,7 +30,10 @@ class ModelHelper():
         self.outdir = outdir
         self.prevEpoch = -1
         self.trainLosses = []
+        self.batch_size = batch_size
         self.epsilon = epsilon
+        self.memory = []
+        self.trainSubprocess = None
         if resume_from is not None:
             checkpoint = torch.load(resume_from)
             self.prevEpoch = checkpoint['epoch']
@@ -62,7 +68,7 @@ class ModelHelper():
             x = torch.cat([featA, featB, featC]).unsqueeze(0).to(self.device)
             predicted_target = self.model(x)
 
-            indices = multiDimArgmax(predicted_target[0])
+            indices = multiDimBatchArgmax(predicted_target)[0]
             return indices
 
     def getActionFromActionTuple(self, action_tuple, action):
@@ -91,7 +97,24 @@ class ModelHelper():
                     action[action_name][i] = min(action[action_name][i] + 1, max_min_dict[action_name][1])
         return action
 
-    def trainModel(self, obs, action, action_tuple, obs_new):
+    def saveObsActionFeaturesInMemory(self, obs, action, action_tuple, obs_new):
+        featA, featB, featC = self.getInputFeaturesFromObservation(obs)
+        actA, actB, actC = torch.unbind(self.convertActionToTensor(action))
+
+        featA = torch.cat([featA, actA])
+        featB = torch.cat([featB, actB])
+        featC = torch.cat([featC, actC])
+        #Todo : Normalize
+
+        x = torch.cat([featA, featB, featC]).unsqueeze(0)
+        real_target = self.getTarget(obs_new, action)
+        self.memory.append((x, action_tuple, real_target))
+        if len(self.memory) == self.batch_size:
+            loss = self.trainModel()
+            assert len(self.memory) == 0
+            return loss
+
+    def trainModel(self):
         '''
         Use the new observation to train the model. Also returns the loss of this step.
         obs, action are input to the model. The model predicts the target for all possible
@@ -101,23 +124,28 @@ class ModelHelper():
         '''
 
         self.model.train()
-        featA, featB, featC = self.getInputFeaturesFromObservation(obs)
-        actA, actB, actC = torch.unbind(self.convertActionToTensor(action))
-        
-        featA = torch.cat([featA, actA])
-        featB = torch.cat([featB, actB])
-        featC = torch.cat([featC, actC])
-        #Todo : Normalize
 
-        x = torch.cat([featA, featB, featC]).unsqueeze(0).to(self.device)
-        prediction = self.model(x)
+        xs = []
+        action_tuples = []
+        real_targets = []
+        for x, action_tuple, real_target in self.memory:
+            xs.append(x)
+            action_tuples.append(action_tuple)
+            real_targets.append(real_target)
+
+        #empty memory
+        del self.memory[:]
+        xs = torch.cat(xs, dim = 0)
+        real_targets = torch.stack(real_targets)
+
+        prediction = self.model(xs.to(self.device))
 
         #index using action tuple
-        predicted_target = prediction[0][action_tuple]
-        real_target = self.getTarget(obs_new, action).to(self.device)
-        loss = self.loss_fn(predicted_target, real_target)
+        predicted_target = torch.stack([prediction[i][action_tuples[i]] for i in range(prediction.shape[0])])
+
+        loss = self.loss_fn(predicted_target, real_targets.to(self.device))
         loss_value = loss.item()
-        
+
         self.optim.zero_grad()
         loss.backward()
         self.optim.step()
@@ -128,7 +156,6 @@ class ModelHelper():
         if np.isnan(loss_value):
             print("Nan values in target ", torch.max(torch.isnan(real_target)))
             print("Nan values in predicted ", torch.max(torch.isnan(predicted_target)))
-
         return loss_value
 
     def getTarget(self, obs, action):

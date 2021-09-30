@@ -10,7 +10,9 @@ def runSimulation(
     sim_time: int,
     resume_from: str,
     outdir: str,
-    debug: bool
+    debug: bool,
+    batch_size = 4,
+    epsilon = 0.1
 ):
     """
     Train the model.
@@ -34,7 +36,7 @@ def runSimulation(
         print("Action space", ac_space)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    helper = ModelHelper(device, outdir, resume_from)
+    helper = ModelHelper(device, outdir, resume_from, batch_size=batch_size, epsilon=epsilon)
     try:
 
         for currIt in tqdm(range(iterations)):
@@ -56,11 +58,14 @@ def runSimulation(
                     obs_cur, _, done, _ = env.step(action)
 
                     #sas' (reward is a funciton of s in this case)
-                    loss = helper.trainModel(obs_prev, action, actionTuple, obs_cur)
+                    loss_curr = helper.saveObsActionFeaturesInMemory(obs_prev, action, actionTuple, obs_cur)
+                    if loss_curr is not None:
+                        loss = loss_curr
+                        losses.append(loss)
                 obs_prev = obs_cur
                 stepIdx += 1
-                losses.append(loss)
-                pbar.set_postfix({'Loss': loss,
+                pbar.set_postfix({'Idx' : stepIdx,
+                                  'Loss': loss,
                                   'Other info': "Some variable"})
                 pbar.update(1)
             pbar.close()
