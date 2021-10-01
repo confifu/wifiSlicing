@@ -65,7 +65,7 @@ def runSimulation(
                 obs_prev = obs_cur
                 stepIdx += 1
                 pbar.set_postfix({'Idx' : stepIdx,
-                                  'Loss': loss,
+                                  'Loss': sum(losses)/(len(losses)+1e-4),
                                   'Other info': "Some variable"})
                 pbar.update(1)
             pbar.close()
