@@ -72,7 +72,8 @@ def trainModel(dataDir,
                resume_from=None,
                outDir="",
                numEpochs= 1,
-               batch_size=4):
+               batch_size=4,
+               num_workers = 6):
 
     model = BasicModel()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -93,7 +94,7 @@ def trainModel(dataDir,
         del checkpoint
 
     ds = BasicDataset(dataDir)
-    dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=6, drop_last=True)
+    dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
     loss_fn = torch.nn.SmoothL1Loss()
 
     for epoch in range(prevEpoch + 1, prevEpoch + 1 + numEpochs):
