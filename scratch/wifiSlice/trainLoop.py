@@ -73,7 +73,8 @@ def trainModel(dataDir,
                outDir="",
                numEpochs= 1,
                batch_size=4,
-               num_workers = 6):
+               num_workers = 6,
+               save_every = 1):
 
     model = BasicModel()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -126,11 +127,12 @@ def trainModel(dataDir,
 
         pbar.close()
 
-        #save checkpoint for this epoch
-        checkpoint = {
-            'epoch': epoch,
-            'state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'trainLosses' : trainLosses,
-        }
-        torch.save(checkpoint, outDir + "checkpoint" + str(epoch) + '.pt')
+        if (epoch - prevEpoch) % save_every == 0:
+            #save checkpoint for this epoch
+            checkpoint = {
+                'epoch': epoch,
+                'state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'trainLosses' : trainLosses,
+            }
+            torch.save(checkpoint, outDir + "checkpoint" + str(epoch) + '.pt')
