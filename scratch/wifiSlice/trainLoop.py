@@ -58,8 +58,10 @@ class BasicModel(nn.Module):
         self.layers = nn.Sequential(
             nn.Linear(input_size, pow(2, 7)),
             nn.ReLU(),
+            nn.BatchNorm1d(pow(2, 7)),
             nn.Linear(pow(2, 7), pow(2, 9)),
             nn.ReLU(),
+            nn.BatchNorm1d(pow(2, 9)),
             nn.Linear(pow(2, 9), output_size)
         )
     def forward(self, x):
@@ -72,6 +74,7 @@ def trainModel(dataDir,
                resume_from=None,
                outDir="",
                numEpochs= 1,
+               learning_rate = 1e-3,
                batch_size=4,
                num_workers = 6,
                save_every = 1):
@@ -79,7 +82,7 @@ def trainModel(dataDir,
     model = BasicModel()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    optimizer = torch.optim.Adam(lr=1e-4, params = model.parameters())
+    optimizer = torch.optim.Adam(lr=learning_rate, params = model.parameters())
     prevEpoch = -1
     trainLosses = []
     if resume_from is not None:
@@ -89,7 +92,7 @@ def trainModel(dataDir,
         print("Resuming from checkpoint at, ", resume_from, ", epoch, ", prevEpoch)
 
         trainLosses = checkpoint['trainLosses']
-        model.load_state_dict(checkpoint['state_dict'], strict = True)
+        model.load_state_dict(checkpoint['state_dict'], strict = False)
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
         del checkpoint
