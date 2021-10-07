@@ -38,6 +38,8 @@ class BasicDataset(Dataset):
         x = ckpt['x']
         action_tuple = ckpt['action_tuple']
         real_target = ckpt['real_target']
+        x = x.squeeze(0)
+        real_target = real_target.unsqueeze(0)
         return x, torch.LongTensor(action_tuple), real_target
 
     def __len__(self):
