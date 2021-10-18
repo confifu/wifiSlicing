@@ -18,7 +18,7 @@ def chWidthFromChNum(chNum):
     elif chNum < 50: return 80
     else : return 160
 
-class ModelHelper():
+class DataGenHelper():
     '''
     Helper class that trains the model and returns actions, targets for a given state
     '''
@@ -26,14 +26,17 @@ class ModelHelper():
         self.device = device
         self.outdir = outdir
         self.idx = 0
+        self.prev_reward = 0
+        self.reward_decay_rate = 0.8
 
-    def getActionTuple(self, obs, action):
+    def getActionTuple(self, obs, action, slice_num):
         '''
-        Returns a vector with values {0,1,2} using the trained model and
-        last observation and action, The vector decides whether a variable
-        should be decreased, increased or remain constant.
+        Returns a vector with values {0,1,2}. Only changes values for the current slice.
         '''
-        return tuple([ri(0, 2) for i in range(12)])
+        ret_val = [1 for i in range(12)]
+        for i in range(4*slice_num, 4 *(slice_num + 1)):
+            ret_val[i] = ri(0, 2)
+        return tuple(ret_val)
 
     def getActionFromActionTuple(self, action_tuple, action):
         '''
@@ -61,7 +64,7 @@ class ModelHelper():
                     action[action_name][i] = min(action[action_name][i] + 1, max_min_dict[action_name][1])
         return action
 
-    def saveObsActionFeaturesInMemory(self, obs, action, action_tuple, obs_new):
+    def saveObsActionFeaturesInMemory(self, obs, action, action_tuple, obs_new, slice_num):
         featA, featB, featC = self.getInputFeaturesFromObservation(obs)
         actA, actB, actC = torch.unbind(self.convertActionToTensor(action))
 
@@ -71,9 +74,11 @@ class ModelHelper():
         #Todo : Normalize
 
         x = torch.cat([featA, featB, featC]).unsqueeze(0)
-        real_target = self.getTarget(obs_new, action)
+        real_target = self.reward_decay_rate * self.prev_reward +  self.getTarget(obs_new, action)
+        self.prev_reward = real_target
         train_data = {
             'x': x,
+            'slice_num' : slice_num,
             'action_tuple': action_tuple,
             'real_target': real_target,
         }

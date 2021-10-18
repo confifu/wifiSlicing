@@ -1,6 +1,6 @@
 from ns3gym import ns3env
 from tqdm.notebook import tqdm
-from Model import ModelHelper
+from DataGenerator import DataGenHelper
 import torch
 
 
@@ -36,7 +36,7 @@ def runSimulation(
         print("Action space", ac_space)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    helper = ModelHelper(device, outdir, resume_from, batch_size=batch_size, epsilon=epsilon)
+    helper = DataGenHelper(device, outdir, resume_from, batch_size=batch_size, epsilon=epsilon)
     try:
 
         for currIt in tqdm(range(iterations)):
@@ -52,12 +52,13 @@ def runSimulation(
                     loss = None
 
                 else:
-                    actionTuple = helper.getActionTuple(obs_prev, action)
+                    slice_num = stepIdx % 3
+                    actionTuple = helper.getActionTuple(obs_prev, action, slice_num)
                     action = helper.getActionFromActionTuple(actionTuple, action)
                     obs_cur, _, done, _ = env.step(action)
 
                     #sas' (reward is a funciton of s in this case)
-                    helper.saveObsActionFeaturesInMemory(obs_prev, action, actionTuple, obs_cur)
+                    helper.saveObsActionFeaturesInMemory(obs_prev, action, actionTuple, obs_cur, slice_num)
 
                 obs_prev = obs_cur
                 stepIdx += 1
