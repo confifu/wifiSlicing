@@ -121,12 +121,12 @@ class DataGenHelper():
     def getInputFeaturesFromObservation(self, obs):
         obsTensors = self.convertObsToTensors(obs)
         obsTensors = self.normalizeObs(obsTensors)
-        funcs = [torch.mean, torch.var, torch.min, torch.max]
-        featuresA = torch.stack([func(elem) for elem in obsTensors[0] for func in funcs])
-        featuresB = torch.stack([func(elem) for elem in obsTensors[1] for func in funcs])
-        featuresC = torch.stack([func(elem) for elem in obsTensors[2] for func in funcs])
 
-        #print(featuresA.shape)  #(20-d vector)
+        featuresA = torch.cat([elem for elem in obsTensors[0]])
+        featuresB = torch.cat([elem for elem in obsTensors[1]])
+        featuresC = torch.cat([elem for elem in obsTensors[2]])
+
+        #print(featuresA.shape, featuresB.shape, featuresC.shape)  #(20-d vector)
         return featuresA, featuresB, featuresC
 
     def convertObsToTensors(self, obs):
@@ -164,7 +164,7 @@ class DataGenHelper():
         drB = drB / 100000
         tpB = tpB / 100
         rpB = rpB / 100
-        lB = lA / 1000
+        lB = lB / 1000
         rPowB = rPowB / 20
 
         drC = drC / 100
