@@ -116,7 +116,8 @@ class DataGenHelper():
         totalBandWidth = sum([chWidthFromChNum(action["chNum"][i]) for i in range(3)])
         se = throughput/totalBandWidth
 
-        return targetA + targetB + targetC + se
+        #return targetA + targetB + targetC + se
+        return se
 
     def getInputFeaturesFromObservation(self, obs):
         obsTensors = self.convertObsToTensors(obs)
