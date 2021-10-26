@@ -159,7 +159,7 @@ class ModelHelper():
         drB = drB / 100000
         tpB = tpB / 100
         rpB = rpB / 100
-        lB = lA / 1000
+        lB = lB / 1000
         rPowB = rPowB / 20
 
         drC = drC / 100
