@@ -12,7 +12,8 @@ def runSimulation(
     outdir: str,
     debug: bool,
     batch_size = 4,
-    epsilon = 0.1
+    epsilon = 0.1,
+    infer = False
 ):
     """
     Train the model.
@@ -37,6 +38,7 @@ def runSimulation(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     helper = DataGenHelper(device, outdir, resume_from, batch_size=batch_size, epsilon=epsilon)
+    se_list = []
     try:
 
         for currIt in tqdm(range(iterations)):
@@ -57,9 +59,13 @@ def runSimulation(
                     action = helper.getActionFromActionTuple(actionTuple, action)
                     obs_cur, _, done, _ = env.step(action)
 
-                    #sas' (reward is a funciton of s in this case)
-                    helper.saveObsActionFeaturesInMemory(obs_prev, action, actionTuple, obs_cur, slice_num)
+                    if not infer:
+                        #sas' (reward is a funciton of s in this case)
+                        helper.saveObsActionFeaturesInMemory(obs_prev, action, actionTuple, obs_cur, slice_num)
 
+                    if infer:
+                        se = helper.getTarget(obs_cur, action)
+                        se_list.append(se)
                 obs_prev = obs_cur
                 stepIdx += 1
                 pbar.set_postfix({'Idx' : stepIdx})
@@ -73,3 +79,6 @@ def runSimulation(
         del env
         #env.close()
         print("Done")
+    
+    if infer:
+        return se_list

@@ -28,14 +28,31 @@ class DataGenHelper():
         self.idx = 0
         self.prev_reward = 0
         self.reward_decay_rate = 0.8
+        self.model = BasicModel().to(self.device)
+        self.outdir = outdir
+        self.batch_size = batch_size
+        self.epsilon = epsilon
+        if resume_from is not None:
+            checkpoint = torch.load(resume_from)
+            self.prevEpoch = checkpoint['epoch']
+            print("Resuming from checkpoint at, ", resume_from, ", epoch, ", self.prevEpoch)
+            self.model.load_state_dict(checkpoint['state_dict'], strict = True)
+            del checkpoint
 
     def getActionTuple(self, obs, action, slice_num):
         '''
         Returns a vector with values {0,1,2}. Only changes values for the current slice.
         '''
         ret_val = [1 for i in range(12)]
-        for i in range(4*slice_num, 4 *(slice_num + 1)):
-            ret_val[i] = ri(0, 2)
+        
+        if ri(0, 10)/10.0 > self.epsilon:
+            predicted_target = self.getModelOutput(obs, action, slice_num)
+            indices = multiDimBatchArgmax(predicted_target)[0]
+            for i in range(4*slice_num, 4 *(slice_num + 1)):
+                ret_val[i] = indices[i - 4*slice_num]
+        else:
+            for i in range(4*slice_num, 4 *(slice_num + 1)):
+                ret_val[i] = ri(0, 2)
         return tuple(ret_val)
 
     def getActionFromActionTuple(self, action_tuple, action):
@@ -63,6 +80,23 @@ class DataGenHelper():
                 elif action_tuple[3*j + i] == 2 :
                     action[action_name][i] = min(action[action_name][i] + 1, max_min_dict[action_name][1])
         return action
+
+    def getModelOutput(self, obs, action, slice_num):
+        featA, featB, featC = self.getInputFeaturesFromObservation(obs)
+        actA, actB, actC = torch.unbind(self.convertActionToTensor(action))
+
+        featA = torch.cat([featA, actA])
+        featB = torch.cat([featB, actB])
+        featC = torch.cat([featC, actC])
+        #Todo : Normalize
+
+        x = torch.cat([featA, featB, featC])
+        x = torch.cat([x, torch.tensor([slice_num])]).unsqueeze(0)
+        x = x.to(self.device)
+
+        output = self.model(x)
+        self.idx += 1
+        return output
 
     def saveObsActionFeaturesInMemory(self, obs, action, action_tuple, obs_new, slice_num):
         featA, featB, featC = self.getInputFeaturesFromObservation(obs)
@@ -187,3 +221,37 @@ class DataGenHelper():
         txPower = torch.Tensor(action["txPower"]).float() / 20
 
         return torch.stack([chNum, gi, mcs, txPower]).transpose(0, 1)
+
+class BasicModel(nn.Module):
+    '''
+    Basic model that predicts target value for 3^12 possible actions
+    given the previous observation and the action.
+    '''
+    def __init__(self):
+        super(BasicModel, self).__init__()
+        input_size = 553
+        output_size = pow(3, 4)
+
+        self.layers = nn.Sequential(
+            nn.Linear(input_size, pow(2, 9)),
+            nn.ReLU(),
+            nn.BatchNorm1d(pow(2, 9)),
+            nn.Linear(pow(2, 9), pow(2, 11)),
+            nn.ReLU(),
+            nn.BatchNorm1d(pow(2, 11)),
+            nn.Linear(pow(2, 11), pow(2, 11)),
+            nn.ReLU(),
+            nn.BatchNorm1d(pow(2, 11)),
+            nn.Linear(pow(2, 11), pow(2, 9)),
+            nn.ReLU(),
+            nn.BatchNorm1d(pow(2, 9)),
+            nn.Linear(pow(2, 9), pow(2, 7)),
+            nn.ReLU(),
+            nn.BatchNorm1d(pow(2, 7)),
+            nn.Linear(pow(2, 7), output_size)
+        )
+    def forward(self, x):
+        x = self.layers(x)
+        shape = tuple([-1] + [3 for i in range(4)])
+        x = x.reshape(shape)
+        return x
