@@ -155,7 +155,7 @@ class DataGenHelper():
 
     def getInputFeaturesFromObservation(self, obs):
         obsTensors = self.convertObsToTensors(obs)
-        obsTensors = self.normalizeObs(obsTensors)
+        #obsTensors = self.normalizeObs(obsTensors)
 
         featuresA = torch.cat([elem for elem in obsTensors[0]])
         featuresB = torch.cat([elem for elem in obsTensors[1]])
